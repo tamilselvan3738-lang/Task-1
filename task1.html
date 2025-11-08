@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daily Expense Tracker</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f8fafc;
+    margin: 0;
+    padding: 20px;
+  }
+  .container {
+    max-width: 450px;
+    margin: auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  h2 {
+    text-align: center;
+    color: #333;
+  }
+  input, button {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    margin-top: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+  button {
+    cursor: pointer;
+    border: none;
+    font-weight: bold;
+  }
+  #addBtn {
+    background: #007bff;
+    color: white;
+  }
+  #clearBtn {
+    background: #dc3545;
+    color: white;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+  li {
+    border-bottom: 1px solid #eee;
+    padding: 6px 0;
+  }
+  .alert {
+    color: #b91c1c;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 10px;
+  }
+  .success {
+    color: #047857;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2>💰 Daily Expense Tracker</h2>
+    <input type="number" id="amount" placeholder="Enter amount (₹)" />
+    <button id="addBtn">Add Expense</button>
+    <button id="clearBtn">🗑 Clear All Data</button>
+
+    <p><strong>Average Expense:</strong> ₹<span id="average">0</span></p>
+    <p><strong>Today's Spending:</strong> ₹<span id="today">0</span></p>
+    <p id="message" class="success">Start tracking your expenses!</p>
+
+    <h4>📅 Expense History</h4>
+    <ul id="expenseList"></ul>
+  </div>
+
+  <script>
+    let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+
+    function saveExpenses() {
+      localStorage.setItem("expenses", JSON.stringify(expenses));
+    }
+
+    document.getElementById("addBtn").addEventListener("click", () => {
+      const amount = parseFloat(document.getElementById("amount").value);
+      if (isNaN(amount) || amount <= 0) return alert("Enter a valid amount!");
+
+      const today = new Date().toISOString().split("T")[0];
+      expenses.push({ date: today, amount });
+      saveExpenses();
+      document.getElementById("amount").value = "";
+      updateUI();
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (confirm("Are you sure you want to delete all expense data?")) {
+        localStorage.removeItem("expenses");
+        expenses = [];
+        updateUI();
+      }
+    });
+
+    function calculateAverage() {
+      if (expenses.length === 0) return 0;
+      const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+      return total / expenses.length;
+    }
+
+    function getTodaySpending() {
+      const today = new Date().toISOString().split("T")[0];
+      return expenses
+        .filter(e => e.date === today)
+        .reduce((sum, e) => sum + e.amount, 0);
+    }
+
+    function updateUI() {
+      const avg = calculateAverage();
+      const todaySpending = getTodaySpending();
+      const message = document.getElementById("message");
+
+      document.getElementById("average").textContent = avg.toFixed(2);
+      document.getElementById("today").textContent = todaySpending.toFixed(2);
+
+      if (todaySpending > 2 * avg && avg > 0) {
+        message.textContent = "⚠ Unusual spending detected today!";
+        message.className = "alert";
+      } else {
+        message.textContent = "✅ Spending recorded successfully.";
+        message.className = "success";
+      }
+
+      renderExpenseList();
+    }
+
+    function renderExpenseList() {
+      const list = document.getElementById("expenseList");
+      list.innerHTML = "";
+      expenses.slice().reverse().forEach(e => {
+        const li = document.createElement("li");
+        li.textContent = `${e.date}: ₹${e.amount.toFixed(2)}`;
+        list.appendChild(li);
+      });
+    }
+
+    updateUI();
+  </script>
+</body>
+</html>
